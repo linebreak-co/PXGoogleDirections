@@ -63,7 +63,18 @@ public class PXGoogleDirections: NSObject {
 	// MARK: Private class variables and consants
 	
 	private static let errorDomain = "PXGoogleDirectionsErrorDomain"
-	private static let _apiBaseURL = "https://maps.googleapis.com/maps/api/directions/json"
+	// Default to Google's Directions API.
+	private static var _apiBaseURL = "https://maps.googleapis.com/"
+	// Support API proxy servers:
+	private static var apiBaseURL: String {
+		get {
+			return _apiBaseURL
+		}
+		set {
+			_apiBaseURL = newValue
+		}
+	}
+	private static let _apiURLSuffix = "maps/api/directions/json"
 	private static var _apiKey = ""
 	private static var apiKey: String {
 		get {
@@ -74,11 +85,11 @@ public class PXGoogleDirections: NSObject {
 			GMSServices.provideAPIKey(_apiKey)
 		}
 	}
-	
+
 	// MARK: Class variables
 	
 	/// The Google Directions API base URL (readonly).
-	public static var apiBaseURL: String { return _apiBaseURL }
+	public static var apiURL: String { return _apiBaseURL + _apiURLSuffix }
 	///	Returns `true` if the Google Maps app is installed and can open places and directions URLs, `false` otherwise
 	public static var canOpenInGoogleMaps: Bool {
 		return UIApplication.sharedApplication().canOpenURL(NSURL(string: "comgooglemaps://")!) && UIApplication.sharedApplication().canOpenURL(NSURL(string: "comgooglemaps-x-callback://")!)
@@ -130,7 +141,7 @@ public class PXGoogleDirections: NSObject {
 				return nil
 			}
 			// Create the base URL with minimal arguments
-			var preparedRequest = "\(PXGoogleDirections.apiBaseURL)?key=\(PXGoogleDirections.apiKey)&origin=\(f)&destination=\(t)"
+			var preparedRequest = "\(PXGoogleDirections.apiURL)?origin=\(f)&destination=\(t)"
 			// Handle transport mode
 			if let m = mode {
 				preparedRequest += "&mode=\(m)"
@@ -208,11 +219,26 @@ public class PXGoogleDirections: NSObject {
 	/**
 	Creates a new instance of `PXGoogleDirections` with the specified API key.
 	
-	- parameter apiKey: Your own API key, provided by Google
+	- parameter apiKey: Your API key, provided by Google
 	*/
-	public init(apiKey: String) {
+	public init(apiKey: String?) {
 		super.init()
-		PXGoogleDirections.apiKey = apiKey
+		if let apiKey = apiKey {
+			PXGoogleDirections.apiKey = apiKey
+		}
+	}
+
+	/**
+	Creates a new instance of `PXGoogleDirections` with the specified API host.
+	This is suitable for use with an API proxy server to protect your API key.
+
+	- parameter apiBaseURL: The root URL of the proxy server, e.g. "https://apiproxyserver.net/"
+	*/
+	public convenience init(apiBaseURL: String?) {
+		self.init(apiKey: .None)
+		if let apiBaseURL = apiBaseURL {
+			PXGoogleDirections.apiBaseURL = apiBaseURL
+		}
 	}
 	
 	/**
